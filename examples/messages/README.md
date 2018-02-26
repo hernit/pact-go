@@ -1,64 +1,34 @@
-# Example - HTTP Mux
+# Example - Message Pact
 
-Example using the standard libraries Mux Router.
+Implements a POC of the message implementation at https://gist.github.com/bethesque/c858e5c15649ae525ef0cc5264b8477c.
 
-The following example is a simple Login UI ([Consumer](#consumer)) that calls a
-User Service ([Provider](#provider)) using JSON over HTTP.
+## Requirements
 
-The API currently exposes a single `Login` endpoint at `POST /users/login`, which
-the Consumer uses to authenticate a User.
+* Ruby 2.3.4+
+* Golang
 
-We test 3 scenarios, highlighting the use of [Provider States](/pact-foundation/pact-go#provider#provider-states):
-
-1. When the user "Billy" exists, and we perform a login, we expect an HTTP `200`
-1. When the user "Billy" does not exists, and we perform a login, we expect an HTTP `404`
-1. When the user "Billy" is unauthorized, and we perform a login, we expect an HTTP `403`
-
-# Getting started
-
-Before any of these tests can be run, ensure Pact Go is installed and run the
-daemon in the background:
+## Running
 
 ```
-go get ./...
-<path to>/pact-go daemon
+./run.sh
 ```
 
+## Output
 
-## Provider
-
-The "Provider" is a real HTTP API containing the `/users/login` API call:
-
-```
-cd provider
-go test -v .
-```
-
-This will spin up the Provider API with extra routes added for the handling of
-provider states, run the verification process and report back success/failure.
-
-### Running the Provider
-
-The provider can be run as a standalone service:
+Should look something like:
 
 ```
-go run cmd/usersvc/main.go
-
-# 200
-curl -v -X POST -H "Content-Type: application/json" -H "Cache-Control: no-cache" -d '{
-  "username":"billy",
-  "password":"issilly"
-}' "http://localhost:8080/users/login"
-
-# 403
-curl -v -X POST -H "Content-Type: application/json" -H "Cache-Control: no-cache" -d '{
-  "username":"billy",
-  "password":"issilly"
-}' "http://localhost:8080/users/login"
-
-# 404
-curl -v -X POST -H "Content-Type: application/json" -H "Cache-Control: no-cache" -d '{
-  "username":"someoneelse",
-  "password":"issilly"
-}' "http://localhost:8080/users/login"
+=== RUN   TestPact_Provider
+2018/02/27 09:36:45 [DEBUG] API handler starting: port 9393 ([::]:9393)
+2018/02/27 09:36:45 [DEBUG] waiting for port 9393 to become available
+2018/02/27 09:36:45 [DEBUG] daemon - verifying provider
+2018/02/27 09:36:45 [DEBUG] starting verification service with args: [exec pact-provider-verifier message-pact.json --provider-base-url http://localhost:9393 --format json]
+Calling 'text' function that would produce a message
+=== RUN   TestPact_Provider/has_matching_content
+--- PASS: TestPact_Provider (1.94s)
+    --- PASS: TestPact_Provider/has_matching_content (0.00s)
+    	pact.go:363: Verifying a pact between Foo and Bar A test message has matching content
+PASS
+ok  	github.com/pact-foundation/pact-go/examples/messages/provider	1.966s
+--> Shutting down running processes
 ```
