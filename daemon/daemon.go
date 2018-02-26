@@ -96,7 +96,7 @@ func (d Daemon) Shutdown() {
 	}
 }
 
-// StartServer starts a mock server and returns a pointer to atypes.MockServer
+// StartServer starts a mock server and returns a pointer to a types.MockServer
 // struct.
 func (d Daemon) StartServer(request types.MockServer, reply *types.MockServer) error {
 	log.Println("[DEBUG] daemon - starting mock server with args:", request.Args)

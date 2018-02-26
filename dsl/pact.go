@@ -5,8 +5,12 @@ collaboration test cases, and Provider contract test verification.
 package dsl
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
@@ -258,6 +262,95 @@ func (p *Pact) VerifyProviderRaw(request types.VerifyRequest) (types.ProviderVer
 // running the provider verification with granular test reporting and
 // automatic failure reporting for nice, simple tests.
 func (p *Pact) VerifyProvider(t *testing.T, request types.VerifyRequest) (types.ProviderVerifierResponse, error) {
+	res, err := p.VerifyProviderRaw(request)
+
+	if err != nil {
+		t.Fatal("Error:", err)
+		return res, err
+	}
+
+	for _, example := range res.Examples {
+		t.Run(example.Description, func(st *testing.T) {
+			st.Log(example.FullDescription)
+			if example.Status != "passed" {
+				st.Errorf("%s\n", example.Exception.Message)
+			}
+		})
+	}
+
+	return res, err
+}
+
+// VerifyProducer accepts an instance of `*testing.T`
+// running provider message verification with granular test reporting and
+// automatic failure reporting for nice, simple tests.
+func (p *Pact) VerifyProducer(t *testing.T, request types.VerifyRequest, handlers map[string]func(...interface{}) (interface{}, error)) (types.ProviderVerifierResponse, error) {
+
+	// Starts the message wrapper API with hooks back to the message handlers
+	// This maps the 'description' field of a message pact, to a function handler
+	// that will implement the message producer. This function must return an object and optionally
+	// and error. The object will be marshalled to JSON for comparison.
+	mux := http.NewServeMux()
+
+	// TODO: make this dynamic
+	port := 9393
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+		// Extract message
+		var message types.Message
+		body, err := ioutil.ReadAll(r.Body)
+		r.Body.Close()
+
+		if err != nil {
+			// TODO: How should we respond back to the verifier in this case? 50x?
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		json.Unmarshal(body, &message)
+
+		// Lookup key in function mapping
+		f, messageFound := handlers[message.Description]
+
+		if !messageFound {
+			// TODO: How should we respond back to the verifier in this case? 50x?
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		// Execute function handler
+		res, handlerErr := f()
+
+		if handlerErr != nil {
+			// TODO: How should we respond back to the verifier in this case? 50x?
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+
+		// Write the body back
+		resBody, _ := json.Marshal(res)
+		w.WriteHeader(http.StatusOK)
+		w.Write(resBody)
+	})
+
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer ln.Close()
+
+	log.Printf("[DEBUG] API handler starting: port %d (%s)", port, ln.Addr())
+	go http.Serve(ln, mux)
+
+	portErr := waitForPort(port, "tcp", "localhost", fmt.Sprintf(`Timed out waiting for Daemon on port %d - are you
+		sure it's running?`, port))
+
+	if portErr != nil {
+		t.Fatal("Error:", err)
+		return types.ProviderVerifierResponse{}, portErr
+	}
+
 	res, err := p.VerifyProviderRaw(request)
 
 	if err != nil {

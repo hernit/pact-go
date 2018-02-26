@@ -27,14 +27,15 @@ type VerificationService struct {
 //    --provider-app-version
 //    --custom-provider-headers
 func (v *VerificationService) NewService(args []string) Service {
-	log.Printf("[DEBUG] starting verification service with args: %v\n", args)
 
-	v.Args = args
+	v.Args = []string{"exec", "pact-provider-verifier", "message-pact.json", "--provider-base-url", "http://localhost:9393", "--format", "json"}
+	log.Printf("[DEBUG] starting verification service with args: %v\n", v.Args)
 	v.Cmd = getVerifierCommandPath()
 	return v
 }
 
+// Runs bundler in the ./bin directory
 func getVerifierCommandPath() string {
 	dir, _ := osext.ExecutableFolder()
-	return fmt.Sprintf(filepath.Join(dir, "pact", "bin", "pact-provider-verifier"))
+	return fmt.Sprintf(filepath.Join(dir, "bin", "bundle"))
 }
