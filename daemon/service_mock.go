@@ -1,7 +1,6 @@
 package daemon
 
 import (
-	"io"
 	"log"
 	"os/exec"
 )
@@ -41,11 +40,9 @@ func (s *ServiceMock) List() map[int]*exec.Cmd {
 }
 
 // Run runs a service synchronously and log its output to the given Pipe.
-func (s *ServiceMock) Run(w io.Writer) (*exec.Cmd, error) {
+func (s *ServiceMock) Run() (*exec.Cmd, error) {
 	log.Println("[DEBUG] starting service")
 	cmd := s.ExecFunc()
-	cmd.Stdout = w
-	cmd.Stderr = w
 	err := cmd.Run()
 
 	return cmd, err

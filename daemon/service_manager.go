@@ -2,7 +2,6 @@ package daemon
 
 import (
 	"bufio"
-	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -101,13 +100,12 @@ func (s *ServiceManager) List() map[int]*exec.Cmd {
 }
 
 // Run runs a service synchronously and log its output to the given Pipe.
-func (s *ServiceManager) Run(w io.Writer) (*exec.Cmd, error) {
+// func (s *ServiceManager) Run(w io.Writer) (*exec.Cmd, error) {
+func (s *ServiceManager) Run() (*exec.Cmd, error) {
 	log.Println("[DEBUG] starting service")
 	log.Printf("[DEBUG] %s %s\n", s.Cmd, strings.Join(s.Args, " "))
 	cmd := exec.Command(s.Cmd, s.Args...)
 	cmd.Env = s.Env
-	cmd.Stdout = w
-	cmd.Stderr = w
 	err := cmd.Run()
 
 	return cmd, err

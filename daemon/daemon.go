@@ -32,17 +32,20 @@ import (
 type Daemon struct {
 	pactMockSvcManager     Service
 	verificationSvcManager Service
+	messageSvcManager      Service
 	signalChan             chan os.Signal
 }
 
 // NewDaemon returns a new Daemon with all instance variables initialised.
-func NewDaemon(MockServiceManager Service, verificationServiceManager Service) *Daemon {
+func NewDaemon(MockServiceManager Service, verificationServiceManager Service, messageServiceManager Service) *Daemon {
 	MockServiceManager.Setup()
 	verificationServiceManager.Setup()
+	messageServiceManager.Setup()
 
 	return &Daemon{
 		pactMockSvcManager:     MockServiceManager,
 		verificationSvcManager: verificationServiceManager,
+		messageSvcManager:      messageServiceManager,
 		signalChan:             make(chan os.Signal, 1),
 	}
 }
@@ -165,6 +168,21 @@ func (d Daemon) VerifyProvider(request types.VerifyRequest, reply *types.Provide
 	}
 
 	return fmt.Errorf("error verifying provider: %s\n\nSTDERR:\n%s\n\nSTDOUT:\n%s", err, stdErr, stdOut)
+}
+
+// CreateMessage runs the Pact Message process
+func (d Daemon) CreateMessage(request types.PactMessageRequest, reply *types.CommandResponse) error {
+	log.Println("[DEBUG] daemon - adding a message")
+	res := &types.CommandResponse{}
+	svc := d.messageSvcManager.NewService([]string{})
+	_, err := svc.Run()
+
+	if err != nil {
+		res.Error = err.Error()
+	}
+
+	*reply = *res
+	return err
 }
 
 // ListServers returns a slice of all running types.MockServers.

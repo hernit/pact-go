@@ -21,6 +21,7 @@ var (
 	commandVerifyProvider = "Daemon.VerifyProvider"
 	commandListServers    = "Daemon.ListServers"
 	commandStopDaemon     = "Daemon.StopDaemon"
+	commandCreateMessage  = "Daemon.CreateMessage"
 )
 
 // Client is the simplified remote interface to the Pact Daemon.
@@ -118,12 +119,28 @@ func (p *PactClient) VerifyProvider(request types.VerifyRequest) (types.Provider
 	port := getPort(request.ProviderBaseURL)
 
 	waitForPort(port, p.getNetworkInterface(), p.Address, fmt.Sprintf(`Timed out waiting for Provider API to start
-		 on port %d - are you sure it's running?`, port))
+    on port %d - are you sure it's running?`, port))
 
 	var res types.ProviderVerifierResponse
 	client, err := getHTTPClient(p.Port, p.getNetworkInterface(), p.Address)
 	if err == nil {
 		err = client.Call(commandVerifyProvider, request, &res)
+		if err != nil {
+			log.Println("[ERROR] rpc: ", err.Error())
+		}
+	}
+
+	return res, err
+}
+
+// UpdateMessagePact adds a pact message
+func (p *PactClient) UpdateMessagePact(request types.PactMessageRequest) (types.CommandResponse, error) {
+	log.Println("[DEBUG] client: adding pact message...")
+
+	var res types.CommandResponse
+	client, err := getHTTPClient(p.Port, p.getNetworkInterface(), p.Address)
+	if err == nil {
+		err = client.Call(commandCreateMessage, request, &res)
 		if err != nil {
 			log.Println("[ERROR] rpc: ", err.Error())
 		}

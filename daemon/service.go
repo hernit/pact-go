@@ -1,7 +1,6 @@
 package daemon
 
 import (
-	"io"
 	"os/exec"
 )
 
@@ -13,6 +12,7 @@ type Service interface {
 	List() map[int]*exec.Cmd
 	Command() *exec.Cmd
 	Start() *exec.Cmd
-	Run(io.Writer) (*exec.Cmd, error)
+	// Run(io.Writer) (*exec.Cmd, error)
+	Run() (*exec.Cmd, error)
 	NewService(args []string) Service
 }

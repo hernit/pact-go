@@ -95,8 +95,9 @@ func (p *Pact) AddInteraction() *Interaction {
 // suite begins. AddInteraction() will automatically call this if no Mock Server
 // has been started.
 func (p *Pact) Setup(startMockServer bool) *Pact {
+	log.Printf("[DEBUG] pact setup1")
 	p.setupLogging()
-	log.Printf("[DEBUG] pact setup")
+	log.Printf("[DEBUG] pact setup2")
 	dir, _ := os.Getwd()
 
 	if p.Network == "" {
@@ -135,9 +136,10 @@ func (p *Pact) Setup(startMockServer bool) *Pact {
 	if perr != nil {
 		log.Println("[ERROR] unable to find free port, mockserver will fail to start")
 	}
-	log.Println("[DEBUG] starting mock service on port:", port)
 
 	if p.Server == nil && startMockServer {
+		log.Println("[DEBUG] starting mock service on port:", port)
+
 		args := []string{
 			"--pact-specification-version",
 			fmt.Sprintf("%d", p.SpecificationVersion),
@@ -159,6 +161,7 @@ func (p *Pact) Setup(startMockServer bool) *Pact {
 
 // Configure logging
 func (p *Pact) setupLogging() {
+	log.Print("[DEBUG] LogLevel", p.LogLevel)
 	if p.logFilter == nil {
 		if p.LogLevel == "" {
 			p.LogLevel = "INFO"
@@ -366,6 +369,31 @@ func (p *Pact) VerifyProducer(t *testing.T, request types.VerifyRequest, handler
 			}
 		})
 	}
+
+	return res, err
+}
+
+// AddMessage creates a new Pact _message_ interaction to build a testable
+// interaction
+func (p *Pact) VerifyMessage(message *Message, handler func(...interface{}) error) (types.CommandResponse, error) {
+	log.Printf("[DEBUG] pact add message")
+	p.Setup(false)
+
+	// Yield message, and send through handler function
+	// TODO: for now just call the handler
+	handler(message)
+
+	log.Printf("[DEBUG] invoked handler")
+	log.Printf("[DEBUG] sending message: %v", message)
+
+	// If no errors, update Message Pact
+	res, err := p.pactClient.UpdateMessagePact(types.PactMessageRequest{
+		Message: message.message,
+	})
+
+	log.Printf("[DEBUG] invoked UpdateMessagePact")
+	log.Print(res)
+	log.Print(err)
 
 	return res, err
 }
