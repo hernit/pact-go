@@ -2,21 +2,24 @@ package provider
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/pact-foundation/pact-go/dsl"
 	"github.com/pact-foundation/pact-go/types"
 )
 
 // The actual Provider test itself
-func TestPact_Provider(t *testing.T) {
+func TestMessageProvider_Success(t *testing.T) {
 	pact := createPact()
 
 	// Map test descriptions to message producer (handlers)
 	// TODO: need to agree on the interface for invoking the function
 	//       do we want to pass in args? ...interface{} is a bit of a catch-all
-	functionMappings := map[string]func(...interface{}) (interface{}, error){
-		"a test message": func(...interface{}) (interface{}, error) {
+	// TODO: convert these all to types to ease readability
+	functionMappings := map[string]func(...interface{}) (map[string]interface{}, error){
+		"a test message": func(...interface{}) (map[string]interface{}, error) {
 			fmt.Println("Calling 'text' function that would produce a message")
 			res := map[string]interface{}{
 				"content": map[string]string{
@@ -38,4 +41,25 @@ func TestPact_Provider(t *testing.T) {
 		PactURLs:               []string{filepath.ToSlash(fmt.Sprintf("%s/billy-bobby.json", pactDir))},
 		ProviderStatesSetupURL: fmt.Sprintf("http://localhost:%d/setup", port),
 	}, functionMappings)
+}
+
+// Configuration / Test Data
+// var port, _ = utils.GetFreePort()
+var port = 9393
+var dir, _ = os.Getwd()
+var pactDir = fmt.Sprintf("%s/../../pacts", dir)
+var logDir = fmt.Sprintf("%s/log", dir)
+
+// Setup the Pact client.
+func createPact() dsl.Pact {
+	// Create Pact connecting to local Daemon
+	return dsl.Pact{
+		Port:              6666,
+		Consumer:          "billy",
+		Provider:          "bobby",
+		LogDir:            logDir,
+		PactDir:           "/tmp",
+		LogLevel:          "DEBUG",
+		PactFileWriteMode: "update",
+	}
 }

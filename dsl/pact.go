@@ -287,7 +287,7 @@ func (p *Pact) VerifyProvider(t *testing.T, request types.VerifyRequest) (types.
 // VerifyProducer accepts an instance of `*testing.T`
 // running provider message verification with granular test reporting and
 // automatic failure reporting for nice, simple tests.
-func (p *Pact) VerifyProducer(t *testing.T, request types.VerifyRequest, handlers map[string]func(...interface{}) (interface{}, error)) (types.ProviderVerifierResponse, error) {
+func (p *Pact) VerifyProducer(t *testing.T, request types.VerifyRequest, handlers map[string]func(...interface{}) (map[string]interface{}, error)) (types.ProviderVerifierResponse, error) {
 
 	// Starts the message wrapper API with hooks back to the message handlers
 	// This maps the 'description' field of a message pact, to a function handler
@@ -325,14 +325,24 @@ func (p *Pact) VerifyProducer(t *testing.T, request types.VerifyRequest, handler
 		// Execute function handler
 		res, handlerErr := f()
 
+		fmt.Printf("[DEBUG] f() returned: %v", res)
+
 		if handlerErr != nil {
 			// TODO: How should we respond back to the verifier in this case? 50x?
+			fmt.Println("[ERROR] error handling function:", handlerErr)
 			w.WriteHeader(http.StatusServiceUnavailable)
 			return
 		}
 
 		// Write the body back
-		resBody, _ := json.Marshal(res)
+		resBody, errM := json.Marshal(res)
+		if errM != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			fmt.Println("[ERROR] error marshalling objcet:", errM)
+			return
+		}
+		fmt.Printf("[DEBUG] sending response body back to verifier %v", resBody)
+
 		w.WriteHeader(http.StatusOK)
 		w.Write(resBody)
 	})
@@ -381,7 +391,10 @@ func (p *Pact) VerifyMessage(message *Message, handler func(...types.Message) er
 
 	// Yield message, and send through handler function
 	// TODO: for now just call the handler
-	handler(message.message)
+	err := handler(message.message)
+	if err != nil {
+		return types.CommandResponse{}, err
+	}
 
 	// If no errors, update Message Pact
 	res, err := p.pactClient.UpdateMessagePact(types.PactMessageRequest{

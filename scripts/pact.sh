@@ -1,7 +1,7 @@
 #!/bin/bash +e
 
 ############################################################
-##        Start and stop the Pact Mock Server daemon      ## 
+##        Start and stop the Pact Mock Server daemon      ##
 ############################################################
 
 LIBDIR=$(dirname "$0")
@@ -12,7 +12,7 @@ CUR_DIR=$(pwd)
 exitCode=0
 
 function shutdown() {
-    step "Shutting down stub server"
+    step "Shutting down daemon"
     log "Finding Pact daemon PID"
     PID=$(ps -ef | grep "pact-go daemon"| grep -v grep | awk -F" " '{print $2}' | head -n 1)
     if [ "${PID}" != "" ]; then
@@ -20,7 +20,7 @@ function shutdown() {
       kill $PID
     fi
     cd $CUR_DIR
-    
+
     if [ "${exitCode}" != "0" ]; then
       log "Reviewing log output: "
       cat logs/*
@@ -52,23 +52,55 @@ if [ ! -f "dist/pact-go" ]; then
 fi
 cd $CUR_DIR
 
-step "Starting Daemon"
-mkdir -p ./logs
-./dist/pact-go daemon -v -l DEBUG > logs/daemon.log 2>&1 &
+function startDaemon() {
+  step "Starting Daemon"
+  mkdir -p ./logs
+  ./dist/pact-go daemon -v -l DEBUG > logs/daemon.log 2>&1 &
+}
+
+startDaemon
 
 export PACT_INTEGRATED_TESTS=1
 export PACT_BROKER_HOST="https://test.pact.dius.com.au"
 export PACT_BROKER_USERNAME="dXfltyFMgNOFZAxr8io9wJ37iUpY42M"
 export PACT_BROKER_PASSWORD="O5AIZWxelWbLvqMd8PkAVycBJh2Psyg1"
 
-step "Running E2E regression and example projects"
-examples=("github.com/pact-foundation/pact-go/examples/consumer/goconsumer" "github.com/pact-foundation/pact-go/examples/go-kit/provider" "github.com/pact-foundation/pact-go/examples/mux/provider" "github.com/pact-foundation/pact-go/examples/gin/provider")
+# step "Running E2E regression and example projects"
+# examples=("github.com/pact-foundation/pact-go/examples/consumer/goconsumer" "github.com/pact-foundation/pact-go/examples/go-kit/provider" "github.com/pact-foundation/pact-go/examples/mux/provider" "github.com/pact-foundation/pact-go/examples/gin/provider")
+
+# for example in "${examples[@]}"
+# do
+#   log "Installing dependencies for example: $example"
+#   cd "${GOPATH}/src/${example}"
+#   go get ./...
+
+#   log "Running tests for $example"
+#   go test -v .
+#   if [ $? -ne 0 ]; then
+#     log "ERROR: Test failed, logging failure"
+#     exitCode=1
+#   fi
+# done
+# cd ..
+shutdown
+
+step "Running message pact tests"
+examples=("github.com/pact-foundation/pact-go/examples/messages/consumer" "github.com/pact-foundation/pact-go/examples/messages/provider")
+go build -o examples/messages/provider/pact-go
+go build -o examples/messages/consumer/pact-go
 
 for example in "${examples[@]}"
 do
-  log "Installing dependencies for example: $example"
   cd "${GOPATH}/src/${example}"
+
+  log "Starting example specific daemon with custom Ruby dependencies"
+  ./pact-go daemon -v -l DEBUG 2>&1 &
+
+  log "Installing dependencies for example: $example"
   go get ./...
+
+  log "Installing Ruby dependencies for exampl: $example"
+  bundle install --binstubs
 
   log "Running tests for $example"
   go test -v .
@@ -76,6 +108,7 @@ do
     log "ERROR: Test failed, logging failure"
     exitCode=1
   fi
+  shutdown
 done
 cd ..
 
