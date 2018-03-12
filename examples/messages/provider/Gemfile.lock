@@ -1,5 +1,5 @@
 GIT
-  remote: git@github.com:pact-foundation/pact-ruby.git
+  remote: https://github.com/pact-foundation/pact-ruby.git
   revision: fa98102843666fd5d334d548ecab9f48257a3ede
   ref: fa98102843666fd5d334d548ecab9f48257a3ede
   specs:

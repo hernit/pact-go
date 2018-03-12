@@ -8,5 +8,5 @@ if ENV['X_PACT_DEVELOPMENT']
   gem "pact-mock-service", path: '../pact-mock-service'
 else
   gem "pact-support", git: "https://github.com/pact-foundation/pact-support.git", ref: "c0c3ad5a92ab02ac0de00d2b0a0d7afeb88095ce"
-  gem "pact", git: "git@github.com:pact-foundation/pact-ruby.git", ref: "fa98102843666fd5d334d548ecab9f48257a3ede"
+  gem "pact", git: "https://github.com/pact-foundation/pact-ruby.git", ref: "fa98102843666fd5d334d548ecab9f48257a3ede"
 end
