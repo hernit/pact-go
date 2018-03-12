@@ -172,17 +172,50 @@ func (d Daemon) VerifyProvider(request types.VerifyRequest, reply *types.Provide
 
 // CreateMessage runs the Pact Message process
 func (d Daemon) CreateMessage(request types.PactMessageRequest, reply *types.CommandResponse) error {
-	log.Println("[DEBUG] daemon - adding a message")
+	log.Println("[DEBUG] daemon - adding a message", request)
 	res := &types.CommandResponse{}
-	svc := d.messageSvcManager.NewService([]string{})
-	_, err := svc.Run()
 
+	// Convert request into flags, and validate request
+	err := request.Validate()
 	if err != nil {
-		res.Error = err.Error()
+		return err
 	}
 
+	svc := d.messageSvcManager.NewService(request.Args)
+
 	*reply = *res
-	return err
+
+	cmd := svc.Command()
+
+	stdOutPipe, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	stdErrPipe, err := cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+	err = cmd.Start()
+	if err != nil {
+		return err
+	}
+	stdOut, err := ioutil.ReadAll(stdOutPipe)
+	if err != nil {
+		return err
+	}
+	stdErr, err := ioutil.ReadAll(stdErrPipe)
+	if err != nil {
+		return err
+	}
+
+	err = cmd.Wait()
+
+	if err == nil {
+		return nil
+	}
+
+	return fmt.Errorf("error creating message: %s\n\nSTDERR:\n%s\n\nSTDOUT:\n%s", err, stdErr, stdOut)
+
 }
 
 // ListServers returns a slice of all running types.MockServers.

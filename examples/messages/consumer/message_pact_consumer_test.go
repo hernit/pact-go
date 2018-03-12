@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/pact-foundation/pact-go/dsl"
+	"github.com/pact-foundation/pact-go/types"
 )
 
 // Common test data
@@ -54,17 +55,13 @@ func TestMessageConsumer(t *testing.T) {
 	message.
 		Given("some state").
 		ExpectsToReceive("some test case").
-		WithMetadata(map[string]string{
-			"content-type": "application/json",
-		}).
-		// WithContent(map[string]interface{}{
-		// 	"foo": "bar",
-		// })
-		WithContent(`{"s":"foo"}`)
+		WithMetadata(commonHeaders).
+		WithContent(map[string]interface{}{
+			"foo": "bar",
+		})
 
-	res, err := pact.VerifyMessage(message, func(i ...interface{}) error {
-		t.Log("[DEBUG] calling message handler func")
-		t.Log("[DEBUG] arguments:", i)
+	res, err := pact.VerifyMessage(message, func(i ...types.Message) error {
+		t.Logf("[DEBUG] calling message handler func with arguments: %v \n", i)
 
 		return nil
 	})
@@ -89,7 +86,9 @@ func createPact() dsl.Pact {
 		Consumer: "billy",
 		Provider: "bobby",
 		LogDir:   logDir,
-		PactDir:  pactDir,
-		LogLevel: "DEBUG",
+		PactDir:  pactDir, // TODO: this seems to cause an issue "NoMethodError: undefined method `content' for #<Pact::Interaction:0x00007fc8f1a082e8>"
+		// PactDir:           "/tmp",
+		LogLevel:          "DEBUG",
+		PactFileWriteMode: "update",
 	}
 }

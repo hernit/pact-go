@@ -1,10 +1,17 @@
 package dsl
 
-import "github.com/pact-foundation/pact-go/types"
+import (
+	"encoding/json"
+	"errors"
+	"log"
+
+	"github.com/pact-foundation/pact-go/types"
+)
 
 // Message is the main implementation of the Pact Message interface.
 type Message struct {
 	message types.Message
+	Args    []string
 }
 
 // Given specifies a provider state. Optional.
@@ -13,11 +20,12 @@ func (p *Message) Given(state string) *Message {
 	return p
 }
 
-// UponReceiving specifies the name of the test case. This becomes the name of
-// the consumer/provider pair in the Pact file. Mandatory.
-func (m *Message) ExpectsToReceive(description string) *Message {
-	m.message.Description = description
-	return m
+// ExpectsToReceive specifies the content it is expecting to be
+// given from the Provider. The function must be able to handle this
+// message for the interaction to succeed.
+func (p *Message) ExpectsToReceive(description string) *Message {
+	p.message.Description = description
+	return p
 }
 
 // WithMetadata specifies message-implementation specific metadata
@@ -27,7 +35,7 @@ func (p *Message) WithMetadata(metadata map[string]string) *Message {
 	return p
 }
 
-// WithRequest specifies the details of the HTTP request that will be used to
+// WithContent specifies the details of the HTTP request that will be used to
 // confirm that the Provider provides an API listening on the given interface.
 // Mandatory.
 func (p *Message) WithContent(content interface{}) *Message {
@@ -37,11 +45,24 @@ func (p *Message) WithContent(content interface{}) *Message {
 	// so that it's not double encoded
 	switch body := content.(type) {
 	case string:
-		p.message.Content = toObject([]byte(body))
+		p.message.Content, _ = toMappedObject([]byte(body))
+	case map[string]interface{}:
+		p.message.Content = body
 	default:
-		// leave alone
-		p.message.Content = content
+		// TODO: fail??
+		// p.message.Content, _ = toMappedObject([]byte(body))
 	}
 
 	return p
+}
+
+func toMappedObject(content []byte) (map[string]interface{}, error) {
+	var obj map[string]interface{}
+	err := json.Unmarshal(content, &obj)
+	if err != nil {
+		log.Println("[DEBUG] interaction: error unmarshaling object into string:", err.Error())
+		return nil, errors.New("unable to marshal content into object")
+	}
+
+	return obj, nil
 }

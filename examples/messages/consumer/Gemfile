@@ -1,3 +1,4 @@
 source 'https://rubygems.org'
-gem "pact-message"
+gem "pact-message", git: "https://github.com/pact-foundation/pact-message-ruby.git", ref: "17289a8a5b4fcc3e494e8b4c6ad25d74b7fc96c8"
 gem "pry"
+

@@ -373,27 +373,24 @@ func (p *Pact) VerifyProducer(t *testing.T, request types.VerifyRequest, handler
 	return res, err
 }
 
-// AddMessage creates a new Pact _message_ interaction to build a testable
+// VerifyMessage creates a new Pact _message_ interaction to build a testable
 // interaction
-func (p *Pact) VerifyMessage(message *Message, handler func(...interface{}) error) (types.CommandResponse, error) {
+func (p *Pact) VerifyMessage(message *Message, handler func(...types.Message) error) (types.CommandResponse, error) {
 	log.Printf("[DEBUG] pact add message")
 	p.Setup(false)
 
 	// Yield message, and send through handler function
 	// TODO: for now just call the handler
-	handler(message)
-
-	log.Printf("[DEBUG] invoked handler")
-	log.Printf("[DEBUG] sending message: %v", message)
+	handler(message.message)
 
 	// If no errors, update Message Pact
 	res, err := p.pactClient.UpdateMessagePact(types.PactMessageRequest{
-		Message: message.message,
+		Message:       message.message,
+		Consumer:      p.Consumer,
+		Provider:      p.Provider,
+		PactWriteMode: p.PactFileWriteMode,
+		PactDir:       p.PactDir,
 	})
-
-	log.Printf("[DEBUG] invoked UpdateMessagePact")
-	log.Print(res)
-	log.Print(err)
 
 	return res, err
 }

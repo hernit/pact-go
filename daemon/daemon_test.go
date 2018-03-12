@@ -52,7 +52,7 @@ func createMockedDaemon(success bool) (*Daemon, *ServiceMock) {
 		}
 	}()
 
-	return NewDaemon(svc, svc), svc
+	return NewDaemon(svc, svc, svc), svc
 }
 
 func TestNewDaemon(t *testing.T) {
