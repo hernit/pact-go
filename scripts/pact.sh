@@ -100,6 +100,7 @@ do
   go get ./...
 
   log "Installing Ruby dependencies for exampl: $example"
+  bundle update
   bundle install --binstubs
 
   log "Running tests for $example"
