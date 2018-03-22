@@ -107,14 +107,6 @@ func TestPact_Provider(t *testing.T) {
 	}
 }
 
-func assertExamples(t *testing.T, r types.ProviderVerifierResponse) {
-	for _, example := range r.Examples {
-		if example.Status != "passed" {
-			t.Errorf("%s\n%s\n", example.FullDescription, example.Exception.Message)
-		}
-	}
-}
-
 // Setup the Pact client.
 func createPact() dsl.Pact {
 	// Create Pact connecting to local Daemon

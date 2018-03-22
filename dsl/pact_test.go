@@ -169,6 +169,7 @@ func TestPact_VerifyFail(t *testing.T) {
 func TestPact_Setup(t *testing.T) {
 	t.Log("testing pact setup")
 	port, _ := utils.GetFreePort()
+	defer stubPorts()()
 	createDaemon(port, true)
 
 	pact := &Pact{Port: port, LogLevel: "DEBUG"}
@@ -188,6 +189,7 @@ func TestPact_Setup(t *testing.T) {
 
 func TestPact_SetupWithMockServerPort(t *testing.T) {
 	port, _ := utils.GetFreePort()
+	defer stubPorts()()
 	createDaemon(port, true)
 
 	pact := &Pact{Port: port, LogLevel: "DEBUG", AllowedMockServerPorts: "32768"}
@@ -202,6 +204,7 @@ func TestPact_SetupWithMockServerPort(t *testing.T) {
 
 func TestPact_SetupWithMockServerPortCSV(t *testing.T) {
 	port, _ := utils.GetFreePort()
+	defer stubPorts()()
 	createDaemon(port, true)
 
 	pact := &Pact{Port: port, LogLevel: "DEBUG", AllowedMockServerPorts: "32768,32769"}
@@ -216,6 +219,7 @@ func TestPact_SetupWithMockServerPortCSV(t *testing.T) {
 
 func TestPact_SetupWithMockServerPortRange(t *testing.T) {
 	port, _ := utils.GetFreePort()
+	defer stubPorts()()
 	createDaemon(port, true)
 
 	pact := &Pact{Port: port, LogLevel: "DEBUG", AllowedMockServerPorts: "32768-32770"}
@@ -230,6 +234,7 @@ func TestPact_SetupWithMockServerPortRange(t *testing.T) {
 
 func TestPact_Invalidrange(t *testing.T) {
 	port, _ := utils.GetFreePort()
+	defer stubPorts()()
 	createDaemon(port, true)
 
 	pact := &Pact{Port: port, LogLevel: "DEBUG", AllowedMockServerPorts: "abc-32770"}
@@ -243,11 +248,7 @@ func TestPact_Invalidrange(t *testing.T) {
 }
 
 func TestPact_Teardown(t *testing.T) {
-	old := waitForPort
-	defer func() { waitForPort = old }()
-	waitForPort = func(int, string, string, string) error {
-		return nil
-	}
+	defer stubPorts()()
 	port, _ := utils.GetFreePort()
 	createDaemon(port, true)
 	waitForPortInTest(port, t)
@@ -261,11 +262,7 @@ func TestPact_Teardown(t *testing.T) {
 }
 
 func TestPact_VerifyProvider(t *testing.T) {
-	old := waitForPort
-	defer func() { waitForPort = old }()
-	waitForPort = func(int, string, string, string) error {
-		return nil
-	}
+	defer stubPorts()()
 	port, _ := utils.GetFreePort()
 	createDaemon(port, true)
 	waitForPortInTest(port, t)
@@ -284,11 +281,7 @@ func TestPact_VerifyProvider(t *testing.T) {
 func TestPact_VerifyProviderBroker(t *testing.T) {
 	s := setupMockBroker(false)
 	defer s.Close()
-	old := waitForPort
-	defer func() { waitForPort = old }()
-	waitForPort = func(int, string, string, string) error {
-		return nil
-	}
+	defer stubPorts()()
 	port, _ := utils.GetFreePort()
 	createDaemon(port, true)
 	waitForPortInTest(port, t)
@@ -309,11 +302,7 @@ func TestPact_VerifyProviderBroker(t *testing.T) {
 func TestPact_VerifyProviderBrokerNoConsumers(t *testing.T) {
 	s := setupMockBroker(false)
 	defer s.Close()
-	old := waitForPort
-	defer func() { waitForPort = old }()
-	waitForPort = func(int, string, string, string) error {
-		return nil
-	}
+	defer stubPorts()()
 	port, _ := utils.GetFreePort()
 	createDaemon(port, true)
 	waitForPortInTest(port, t)
@@ -330,11 +319,7 @@ func TestPact_VerifyProviderBrokerNoConsumers(t *testing.T) {
 }
 
 func TestPact_VerifyProviderFail(t *testing.T) {
-	old := waitForPort
-	defer func() { waitForPort = old }()
-	waitForPort = func(int, string, string, string) error {
-		return nil
-	}
+	defer stubPorts()()
 	port, _ := utils.GetFreePort()
 	createDaemon(port, false)
 	waitForPortInTest(port, t)
@@ -352,6 +337,7 @@ func TestPact_VerifyProviderFail(t *testing.T) {
 
 func TestPact_AddInteraction(t *testing.T) {
 	pact := &Pact{}
+	defer stubPorts()()
 
 	pact.
 		AddInteraction().

@@ -73,19 +73,11 @@ func TestPact_Provider(t *testing.T) {
 	}
 }
 
-func assertExamples(t *testing.T, r types.ProviderVerifierResponse) {
-	for _, example := range r.Examples {
-		if example.Status != "passed" {
-			t.Errorf("%s\n%s\n", example.FullDescription, example.Exception.Message)
-		}
-	}
-}
-
 // Starts the provider API with hooks for provider states.
 // This essentially mirrors the main.go file, with extra routes added.
 func startInstrumentedProvider() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/users/login", UserLogin)
+	mux.HandleFunc("/users/login/", UserLogin)
 	mux.HandleFunc("/setup", providerStateSetupFunc)
 
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", port))

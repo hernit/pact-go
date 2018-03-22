@@ -115,6 +115,7 @@ func createDaemon(port int, success bool) (*daemon.Daemon, *daemon.ServiceMock) 
 
 func TestClient_List(t *testing.T) {
 	port, _ := utils.GetFreePort()
+	defer stubPorts()()
 	createDaemon(port, true)
 	waitForPortInTest(port, t)
 	defer waitForDaemonToShutdown(port, t)
@@ -141,6 +142,7 @@ func TestClient_ListFail(t *testing.T) {
 
 func TestClient_StartServer(t *testing.T) {
 	port, _ := utils.GetFreePort()
+	defer stubPorts()()
 	_, svc := createDaemon(port, true)
 	waitForPortInTest(port, t)
 	defer waitForDaemonToShutdown(port, t)
@@ -155,6 +157,7 @@ func TestClient_StartServer(t *testing.T) {
 
 func TestClient_RPCErrors(t *testing.T) {
 	port, _ := utils.GetFreePort()
+	defer stubPorts()()
 	createDaemon(port, true)
 
 	waitForPortInTest(port, t)
@@ -226,6 +229,7 @@ func TestClient_getPort(t *testing.T) {
 
 func TestClient_VerifyProvider(t *testing.T) {
 	port, _ := utils.GetFreePort()
+	defer stubPorts()()
 	createDaemon(port, true)
 	waitForPortInTest(port, t)
 	defer waitForDaemonToShutdown(port, t)
@@ -250,6 +254,7 @@ func TestClient_VerifyProvider(t *testing.T) {
 
 func TestClient_VerifyProviderFailValidation(t *testing.T) {
 	port, _ := utils.GetFreePort()
+	defer stubPorts()()
 	createDaemon(port, true)
 	waitForPortInTest(port, t)
 	defer waitForDaemonToShutdown(port, t)
@@ -269,6 +274,7 @@ func TestClient_VerifyProviderFailValidation(t *testing.T) {
 
 func TestClient_VerifyProviderFailExecution(t *testing.T) {
 	port, _ := utils.GetFreePort()
+	defer stubPorts()()
 	createDaemon(port, false)
 	waitForPortInTest(port, t)
 	defer waitForDaemonToShutdown(port, t)
@@ -307,6 +313,7 @@ func TestClient_StartServerFail(t *testing.T) {
 
 func TestClient_StopServer(t *testing.T) {
 	port, _ := utils.GetFreePort()
+	defer stubPorts()()
 	_, svc := createDaemon(port, true)
 	waitForPortInTest(port, t)
 	defer waitForDaemonToShutdown(port, t)
@@ -331,6 +338,7 @@ func TestClient_StopServerFail(t *testing.T) {
 
 func TestClient_StopDaemon(t *testing.T) {
 	port, _ := utils.GetFreePort()
+	defer stubPorts()()
 	createDaemon(port, true)
 	waitForPortInTest(port, t)
 	client := &PactClient{Port: port}
@@ -400,4 +408,12 @@ func Test_sanitiseRubyResponse(t *testing.T) {
 			log.Fatalf("Got `%s', Expected `%s`", strings.TrimSpace(test), strings.TrimSpace(v))
 		}
 	}
+}
+
+func stubPorts() func() {
+	old := waitForPort
+	waitForPort = func(int, string, string, string) error {
+		return nil
+	}
+	return func() { waitForPort = old }
 }
