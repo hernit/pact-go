@@ -24,7 +24,7 @@ build:
           . /etc/profile.d/rvm.sh
           make package
     - script:
-        name: pact
+        name: integration test
         code: |
           ./scripts/pact.sh
     - script:
