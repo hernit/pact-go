@@ -26,16 +26,21 @@ var rr http.ResponseWriter
 var req *http.Request
 
 // var name = "Jean-Marie de La Beaujardière😀😍"
+
+// Alias types for readability
 var name = "billy"
 var like = dsl.Like
 var eachLike = dsl.EachLike
 var term = dsl.Term
 
+type s = dsl.String
+type request = dsl.Request
+
 // var str = dsl.S
 var loginRequest = fmt.Sprintf(`{ "username":"%s", "password": "issilly" }`, name)
 
 var commonHeaders = dsl.MapMatcher{
-	"Content-Type": dsl.Term("application/json; charset=utf-8", `application\/json`),
+	"Content-Type": term("application/json; charset=utf-8", `application\/json`),
 }
 
 // Use this to control the setup and teardown of Pact
@@ -135,11 +140,11 @@ func TestPactConsumerLoginHandler_UserExists(t *testing.T) {
 		AddInteraction().
 		Given("User billy exists").
 		UponReceiving("A request to login with user 'billy'").
-		WithRequest(dsl.Request{
+		WithRequest(request{
 			Method: "POST",
-			Path:   dsl.Term("/users/login/1", "/users/login/[0-9]+"),
+			Path:   term("/users/login/1", "/users/login/[0-9]+"),
 			Query: dsl.MapMatcher{
-				"foo": dsl.Term("bar", "[a-zA-Z]+"),
+				"foo": term("bar", "[a-zA-Z]+"),
 			},
 			Body: loginRequest,
 		}).
@@ -172,13 +177,13 @@ func TestPactConsumerLoginHandler_UserDoesNotExist(t *testing.T) {
 		AddInteraction().
 		Given("User billy does not exist").
 		UponReceiving("A request to login with user 'billy'").
-		WithRequest(dsl.Request{
+		WithRequest(request{
 			Method:  "POST",
-			Path:    dsl.String("/users/login/10"),
+			Path:    s("/users/login/10"),
 			Body:    loginRequest,
 			Headers: commonHeaders,
 			Query: dsl.MapMatcher{
-				"foo": dsl.String("anything"),
+				"foo": s("anything"),
 			},
 		}).
 		WillRespondWith(dsl.Response{
@@ -210,9 +215,9 @@ func TestPactConsumerLoginHandler_UserUnauthorised(t *testing.T) {
 		AddInteraction().
 		Given("User billy is unauthorized").
 		UponReceiving("A request to login with user 'billy'").
-		WithRequest(dsl.Request{
+		WithRequest(request{
 			Method:  "POST",
-			Path:    dsl.String("/users/login/10"),
+			Path:    s("/users/login/10"),
 			Body:    loginRequest,
 			Headers: commonHeaders,
 		}).
