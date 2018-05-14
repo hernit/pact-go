@@ -5,11 +5,13 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"sync"
 	"time"
 )
 
 // ServiceManager is the default implementation of the Service interface.
 type ServiceManager struct {
+	sync.Mutex
 	Cmd                 string
 	processes           map[int]*exec.Cmd
 	Args                []string
@@ -37,7 +39,9 @@ func (s *ServiceManager) addServiceMonitor() {
 		select {
 		case p := <-s.commandCreatedChan:
 			if p != nil && p.Process != nil {
+				s.Lock()
 				s.processes[p.Process.Pid] = p
+				s.Unlock()
 			}
 		}
 	}
@@ -61,6 +65,8 @@ func (s *ServiceManager) removeServiceMonitor() {
 // Stop a Service and returns the exit status.
 func (s *ServiceManager) Stop(pid int) (bool, error) {
 	log.Println("[DEBUG] stopping service with pid", pid)
+	s.Lock()
+	defer s.Unlock()
 	cmd := s.processes[pid]
 
 	// Remove service from registry
